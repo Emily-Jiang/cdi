@@ -1,0 +1,59 @@
+////
+Copyright (c) 2021 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
+[[events_full]]
+
+== Events in {cdi_full}
+
+[[firing_events_full]]
+
+=== Firing events in {cdi_full}
+
+[[builtin_event_full]]
+
+==== The built-in `Event` in {cdi_full}
+
+In addition to rules defined in <<builtin_event>>, the following rule applies.
+
+The built-in implementation must be a passivation capable dependency, as defined in <<passivation_capable_dependency>>.
+
+[[observer_resolution_full]]
+
+=== Observer resolution in {cdi_full}
+
+In addition to rules defined in <<observer_resolution>>, the following rule applies.
+
+For a custom implementation of the `ObserverMethod` interface defined in <<observer_method>>, the container must call `getObservedType()` and `getObservedQualifiers()` to determine the observed event type and qualifiers, and `isAsync()` to determine whether the observer is asynchronous or synchronous.
+
+[[observer_methods_full]]
+
+=== Observer methods in {cdi_full}
+
+In addition to rules defined in <<observer_methods>>, the following rules apply.
+
+An observer method is a non-abstract method of a portable extension, as defined in <<init_events>>.
+
+A portable extension may declare multiple observer methods.
+
+[[observes_full]]
+
+==== Declaring an observer method in {cdi_full}
+
+In addition to rules defined in <<observes>>, the following rules apply.
+
+Decorators may not declare observer methods.
+If a decorator has a method with a parameter annotated `@Observes` or `@ObservesAsync`, the container automatically detects the problem and treats it as a definition error.
+
+[[observer_notification_full]]
+
+=== Observer notification in {cdi_full}
+
+In addition to rules defined in <<observer_notification>>, the following rule applies.
+
+For a custom implementation of the `ObserverMethod` interface defined in <<observer_method>>, the container must call `getTransactionPhase()` to determine if the observer method is transactional observer method, and `notify()` which accepts `jakarta.enterprise.inject.spi.EventContext` to invoke the method.

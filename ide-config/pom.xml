@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Copyright (c) 2023 Red Hat, Inc. and others
+	
+	This program and the accompanying materials are made available under the
+	Apache Software License 2.0 which is available at:
+	https://www.apache.org/licenses/LICENSE-2.0.
+	
+	SPDX-License-Identifier: Apache-2.0
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>jakarta.enterprise</groupId>
+        <artifactId>jakarta.enterprise.cdi-parent</artifactId>
+        <version>5.0.0.Alpha1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>cdi-ide-config</artifactId>
+
+    <name>CDI IDE Config</name>
+    <description>Formatting config and import sorting</description>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+
+</project>

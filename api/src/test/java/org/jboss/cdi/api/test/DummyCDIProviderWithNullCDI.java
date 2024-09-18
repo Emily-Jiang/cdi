@@ -1,8 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
  * Copyright 2015, Red Hat, Inc., and individual contributors
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +14,8 @@
 
 package org.jboss.cdi.api.test;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.CDIProvider;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDIProvider;
 
 /**
  * Created by antoine on 16/12/2015.
@@ -30,4 +27,8 @@ public class DummyCDIProviderWithNullCDI implements CDIProvider {
         return null;
     }
 
+    @Override
+    public int getPriority() {
+        return 50;
+    }
 }

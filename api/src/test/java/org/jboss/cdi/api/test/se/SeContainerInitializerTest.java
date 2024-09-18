@@ -1,8 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
  * Copyright 2016, Red Hat, Inc., and individual contributors
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +14,19 @@
 
 package org.jboss.cdi.api.test.se;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import javax.enterprise.inject.se.SeContainerInitializer;
 import java.io.FileWriter;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 /**
  * Test for CDIProvider resolution in CDI abstract class.
+ *
  * @author Antoine Sabot-durand
  *
  */

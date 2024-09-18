@@ -1,8 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
  * Copyright 2016, Red Hat, Inc., and individual contributors
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +14,12 @@
 
 package org.jboss.cdi.api.test.se;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.Extension;
 import java.lang.annotation.Annotation;
 import java.util.Map;
+
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.Extension;
 
 /**
  *
@@ -62,28 +58,31 @@ public class DummySeContainerInitializer2 extends SeContainerInitializer {
         return null;
     }
 
+    @SafeVarargs
     @Override
-    public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
+    public final SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
         return null;
     }
 
     @Override
-    public SeContainerInitializer addInterceptors(Class<?>... interceptorClasses) {
+    public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
         return null;
     }
 
     @Override
-    public SeContainerInitializer addDecorators(Class<?>... decoratorClasses) {
+    public SeContainerInitializer enableDecorators(Class<?>... decoratorClasses) {
         return null;
     }
 
     @Override
-    public SeContainerInitializer addAlternatives(Class<?>... alternativeClasses) {
+    public SeContainerInitializer selectAlternatives(Class<?>... alternativeClasses) {
         return null;
     }
 
+    @SafeVarargs
     @Override
-    public SeContainerInitializer addAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
+    public final SeContainerInitializer selectAlternativeStereotypes(
+            Class<? extends Annotation>... alternativeStereotypeClasses) {
         return null;
     }
 

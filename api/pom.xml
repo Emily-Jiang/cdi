@@ -1,17 +1,28 @@
+<!--
+  ~ Copyright 2018, Red Hat, Inc., and individual contributors
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.jboss.weld</groupId>
-		<artifactId>weld-parent</artifactId>
-		<version>31</version>
-		<relativePath />
+		<groupId>jakarta.enterprise</groupId>
+		<artifactId>jakarta.enterprise.cdi-parent</artifactId>
+		<version>5.0.0.Alpha1-SNAPSHOT</version>
 	</parent>
 
-	<groupId>javax.enterprise</groupId>
-	<artifactId>cdi-api</artifactId>
+	<artifactId>jakarta.enterprise.cdi-api</artifactId>
 	<packaging>jar</packaging>
-	<version>2.0-SNAPSHOT</version>
 
 	<name>CDI APIs</name>
 	<description>APIs for CDI (Contexts and Dependency Injection for Java)</description>
@@ -19,61 +30,49 @@
 	<url>http://cdi-spec.org</url>
 	<licenses>
 		<license>
-			<name>Apache License, Version 2.0</name>
+			<name>Apache License 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
 			<distribution>repo</distribution>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
 		</license>
 	</licenses>
 
-	<ciManagement>
-		<system>Hudson</system>
-		<url>http://hudson.jboss.org</url>
-	</ciManagement>
-
 	<issueManagement>
-		<system>JIRA</system>
-		<url>http://jira.jboss.org/browse/CDI</url>
+		<system>Jakarta CDI Issues</system>
+		<url>https://github.com/jakarta/cdi/issues</url>
 	</issueManagement>
-
-	<organization>
-		<name>JBoss by Red Hat, Inc.</name>
-		<url>http://jboss.org</url>
-	</organization>
 
 	<inceptionYear>2008</inceptionYear>
 
 	<developers>
-		<developer>
-			<name>Pete Muir</name>
-			<id>pmuir</id>
-			<timezone>GMT</timezone>
-			<organization>Red Hat Inc.</organization>
-			<roles>
-				<role>Specfication Lead</role>
-			</roles>
-			<email>pmuir[at]redhat[dot]com</email>
-		</developer>
-
 		<developer>
 			<name>Antoine Sabot-Durand</name>
 			<id>asabotdu</id>
 			<timezone>CET</timezone>
 			<organization>Red Hat Inc.</organization>
 			<roles>
-				<role>Specfication co-lead</role>
+				<role>Specfication Lead</role>
 			</roles>
 			<email>asd[at]redhat[dot]com</email>
 		</developer>
 
 		<developer>
-			<name>Jozef Hartinger</name>
-			<id>jhartinger</id>
-			<timezone>CET</timezone>
+			<name>Martin Kouba</name>
+			<id>mkouba</id>
 			<organization>Red Hat Inc.</organization>
 			<roles>
 				<role>RI tech lead</role>
 			</roles>
-			<email>jhartinger[at]redhat[dot]com</email>
+			<email>mkouba[at]redhat[dot]com</email>
+		</developer>
+
+		<developer>
+			<name>Tomas Remes</name>
+			<id>tremes</id>
+			<organization>Red Hat Inc.</organization>
+			<roles>
+				<role>TCK tech lead</role>
+			</roles>
+			<email>tremes[at]redhat[dot]com</email>
 		</developer>
 
 		<developer>
@@ -84,16 +83,6 @@
 				<role>Implementation developer</role>
 			</roles>
 			<email>struberg[at]yahoo[dot]de</email>
-		</developer>
-
-		<developer>
-			<name>Martin Kouba</name>
-			<id>mkouba</id>
-			<organization>Red Hat Inc.</organization>
-			<roles>
-				<role>RI developer</role>
-			</roles>
-			<email>mkouba[at]redhat[dot]com</email>
 		</developer>
 
 		<developer>
@@ -108,6 +97,16 @@
 		</developer>
 
 		<developer>
+			<name>Matej Novotny</name>
+			<id>manovotn</id>
+			<organization>Red Hat Inc.</organization>
+			<roles>
+				<role>TCK and RI developer</role>
+			</roles>
+			<email>manovotn[at]redhat[dot]com</email>
+		</developer>
+
+		<developer>
 			<name>Mark Paluch</name>
 			<id>mp911de</id>
 			<organization>Independent</organization>
@@ -118,25 +117,11 @@
 			<email>mpaluch[at]paluch[dot]biz</email>
 		</developer>
 
-		<developer>
-			<name>Tomas Remes</name>
-			<id>tremes</id>
-			<organization>Red Hat Inc.</organization>
-			<roles>
-				<role>TCK tech lead</role>
-			</roles>
-			<email>tremes[at]redhat[dot]com</email>
-		</developer>
 	</developers>
 
 
 	<properties>
-		<atinject.api.version>1</atinject.api.version>
-		<uel.api.version>3.0.0</uel.api.version>
-		<interceptor.api.version>1.2</interceptor.api.version>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
+		<maven.build.timestamp.format>MMMM dd, yyyy</maven.build.timestamp.format>
 	</properties>
 
 	<!-- Configure all dependencies (e.g. testing) -->
@@ -146,44 +131,60 @@
 			<dependency>
 				<groupId>org.testng</groupId>
 				<artifactId>testng</artifactId>
-				<version>6.8.8</version>
+				<version>7.9.0</version>
 			</dependency>
 
 			<dependency>
-				<groupId>javax.inject</groupId>
-				<artifactId>javax.inject</artifactId>
+				<groupId>jakarta.enterprise</groupId>
+				<artifactId>jakarta.enterprise.lang-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>jakarta.annotation</groupId>
+				<artifactId>jakarta.annotation-api</artifactId>
+				<version>${annotation.api.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>jakarta.inject</groupId>
+				<artifactId>jakarta.inject-api</artifactId>
 				<version>${atinject.api.version}</version>
 			</dependency>
 
 			<dependency>
-				<groupId>javax.el</groupId>
-				<artifactId>javax.el-api</artifactId>
-				<version>${uel.api.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>javax.interceptor</groupId>
-				<artifactId>javax.interceptor-api</artifactId>
+				<groupId>jakarta.interceptor</groupId>
+				<artifactId>jakarta.interceptor-api</artifactId>
 				<version>${interceptor.api.version}</version>
 			</dependency>
-
 		</dependencies>
 	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
-			<groupId>javax.el</groupId>
-			<artifactId>javax.el-api</artifactId>
+			<groupId>jakarta.enterprise</groupId>
+			<artifactId>jakarta.enterprise.lang-model</artifactId>
 		</dependency>
 
 		<dependency>
-			<groupId>javax.interceptor</groupId>
-			<artifactId>javax.interceptor-api</artifactId>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
 
 		<dependency>
-			<groupId>javax.inject</groupId>
-			<artifactId>javax.inject</artifactId>
+			<groupId>jakarta.interceptor</groupId>
+			<artifactId>jakarta.interceptor-api</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>jakarta.annotation</groupId>
+					<artifactId>jakarta.annotation-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>jakarta.inject</groupId>
+			<artifactId>jakarta.inject-api</artifactId>
 		</dependency>
 
 		<dependency>
@@ -198,7 +199,8 @@
 		<connection>scm:git:git@github.com:cdi-spec/cdi.git</connection>
 		<url>scm:git:git@github.com:cdi-spec/cdi.git</url>
 		<developerConnection>scm:git:git@github.com:cdi-spec/cdi.git</developerConnection>
-	</scm>
+	  <tag>HEAD</tag>
+  </scm>
 
 	<profiles>
 		<profile>
@@ -213,7 +215,7 @@
 				<repository>
 					<id>jboss-public-repository-group</id>
 					<name>JBoss Public Maven Repository Group</name>
-					<url>http://repository.jboss.org/nexus/content/groups/public</url>
+					<url>https://repository.jboss.org/nexus/content/groups/public</url>
 					<releases>
 						<enabled>true</enabled>
 						<updatePolicy>never</updatePolicy>
@@ -228,7 +230,7 @@
 				<pluginRepository>
 					<id>jboss-public-repository-group</id>
 					<name>JBoss Public Maven Repository Group</name>
-					<url>http://repository.jboss.org/nexus/content/groups/public</url>
+					<url>https://repository.jboss.org/nexus/content/groups/public</url>
 					<releases>
 						<enabled>true</enabled>
 						<updatePolicy>never</updatePolicy>
@@ -243,7 +245,36 @@
 	</profiles>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>${project.basedir}/..</directory>
+				<includes>
+					<include>LICENSE.txt</include>
+					<include>NOTICE.md</include>
+				</includes>
+				<targetPath>META-INF</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<filtering>true</filtering>
+				<directory>src/test/resources</directory>
+			</testResource>
+		</testResources>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<compilerArgs>
+						<arg>-Xlint:all</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
@@ -259,12 +290,12 @@
 				</executions>
 				<configuration>
 					<instructions>
+						<Automatic-Module-Name>jakarta.cdi</Automatic-Module-Name>
 						<Export-Package>
-							javax.decorator;version=2.0,
-							javax.enterprise.*;version=2.0,
+							jakarta.decorator;version=5.0,
+							jakarta.enterprise.*;version=5.0,
 						</Export-Package>
 						<Import-Package>
-							javax.el; version=2.2,
 							*
 						</Import-Package>
 					</instructions>
@@ -282,13 +313,104 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19</version>
+				<version>${maven-surefire-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>default-test</id>
+						<configuration>
+							<systemPropertyVariables>
+								<serviceDir>${project.build.testOutputDirectory}/META-INF/services/</serviceDir>
+							</systemPropertyVariables>
+							<excludes>
+								<exclude>**/privileged/**</exclude>
+							</excludes>
+							<useModulePath>false</useModulePath>
+						</configuration>
+					</execution>
+					<execution>
+						<id>privileged-test</id>
+						<phase>test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<systemPropertyVariables>
+								<serviceDir>${project.build.testOutputDirectory}/META-INF/services/</serviceDir>
+							</systemPropertyVariables>
+							<includes>
+								<include>**/privileged/**</include>
+							</includes>
+							<argLine>-Djava.security.manager -Djava.security.policy="${project.build.testOutputDirectory}/java.policy"</argLine>
+							<forkCount>1</forkCount>
+							<useModulePath>false</useModulePath>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${maven-resources-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>filter-overview</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>src/main/javadoc</directory>
+									<include>overview.html</include>
+									<filtering>true</filtering>
+								</resource>
+							</resources>
+							<outputDirectory>${project.build.directory}/javadoc</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
 				<configuration>
-					<systemPropertyVariables>
-						<serviceDir>${project.build.testOutputDirectory}/META-INF/services/</serviceDir>
-					</systemPropertyVariables>
+					<docfilessubdirs>true</docfilessubdirs>
+					<description>Jakarta Contexts and Dependency Injection API</description>
+					<doctitle>Jakarta Contexts and Dependency Injection API</doctitle>
+					<detectJavaApiLink>false</detectJavaApiLink>
+					<overview>${project.build.directory}/javadoc/overview.html</overview>
+					<windowtitle>Jakarta Contexts and Dependency Injection API</windowtitle>
+					<header><![CDATA[<br>Jakarta Contexts and Dependency Injection ${project.version}]]>
+					</header>
+					<bottom><![CDATA[
+Comments to: <a href="mailto:cdi-dev@eclipse.org">cdi-dev@eclipse.org</a>.<br>
+Copyright &#169; 2018,2023 Eclipse Foundation.<br>
+Use is subject to <a href="{@docRoot}/doc-files/speclicense.html" target="_top">license terms</a>.]]>
+					</bottom>
 				</configuration>
+
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

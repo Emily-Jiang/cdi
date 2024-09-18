@@ -1,0 +1,19 @@
+////
+Copyright (c) 2022 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
+:numbered!:
+
+== Structure
+
+The Core CDI specification has two subparts:
+
+* {cdi_lite} specification which contains a subset of CDI features and which can be implemented in more restricted environments; this is part of the Jakarta EE Core Profile;
+* {cdi_full} specification that builds on top of Lite and adds all advanced CDI features; this is the classic CDI platform that is part of the Jakarta EE Web Profile and Jakarta EE Platform.
+
+:numbered:

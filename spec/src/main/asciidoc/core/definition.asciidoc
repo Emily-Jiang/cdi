@@ -1,3 +1,12 @@
+////
+Copyright (c) 2015 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
 [[concepts]]
 
 == Concepts
@@ -25,10 +34,12 @@ The developer then defines the remaining attributes by explicitly annotating the
 
 The bean types and qualifiers of a bean determine where its instances will be injected by the container, as defined in <<injection_and_resolution>>.
 
-The bean developer may also create interceptors and/or decorators or reuse existing interceptors and/or decorators.
+The bean developer may also create interceptors or reuse existing interceptors.
 The interceptor bindings of a bean determine which interceptors will be applied at runtime.
+Interceptors are defined by Jakarta EE interceptors specification, and interceptor bindings are specified in <<interceptors>>.
+
+In {cdi_full} environment, the bean developer may also create decorators or reuse existing decorators.
 The bean types and qualifiers of a bean determine which decorators will be applied at runtime.
-Interceptors are defined by Java interceptors specification, and interceptor bindings are specified in <<interceptors>>.
 Decorators are defined in <<decorators>>.
 
 [[capabilities]]
@@ -40,8 +51,12 @@ A bean is provided by the container with the following capabilities:
 * transparent creation and destruction and scoping to a particular context, specified in <<contexts>> and <<lifecycle>>,
 * scoped resolution by bean type and qualifier annotation type when injected into a Java-based client, as defined by <<typesafe_resolution>>,
 * lifecycle callbacks and automatic injection of other bean instances, specified in <<implementation>> and <<injection_and_resolution>>,
-* method interception, callback interception, and decoration, as defined in <<interceptors>> and <<decorators>>, and
+* method interception, callback interception, as defined in <<interceptors>>, and
 * event notification, as defined in <<events>>.
+
+In {cdi_full} environment, the container also provides the following capabilities:
+
+* decoration, as defined in <<decorators>>.
 
 
 [[bean_types]]
@@ -75,7 +90,7 @@ The bean types of a bean are used by the rules of typesafe resolution defined in
 
 Almost any Java type may be a bean type of a bean:
 
-* A bean type may be an interface, a concrete class or an abstract class, and may be declared final or have final methods.
+* A bean type may be an interface, a concrete class or an abstract class, may be declared sealed or non-sealed or final, and may have final methods.
 * A bean type may be a parameterized type with actual type parameters and type variables.
 * A bean type may be an array type.
 Two array types are considered identical only if the element type is identical.
@@ -95,7 +110,7 @@ Note that certain additional restrictions are specified in <<unproxyable>> for b
 
 ==== Restricting the bean types of a bean
 
-The bean types of a bean may be restricted by annotating the bean class or producer method or field with the annotation `@javax.enterprise.inject.Typed`.
+The bean types of a bean may be restricted by annotating the bean class or producer method or field with the annotation `@jakarta.enterprise.inject.Typed`.
 
 [source, java]
 ----
@@ -207,15 +222,17 @@ The container inspects the qualifier annotations and type of the injected attrib
 
 An injection point may even specify multiple qualifiers.
 
-Qualifier types are also used as event selectors by event consumers, as defined in <<events>>, and to bind decorators to beans, as specified in <<decorators>>.
+Qualifier types are also used as event selectors by event consumers, as defined in <<events>>.
+
+In {cdi_full} environment, qualifier types are also used to bind decorators to beans, as specified in <<decorators>>.
 
 [[builtin_qualifiers]]
 
 ==== Built-in qualifier types
 
-Three standard qualifier types are defined in the package `javax.enterprise.inject`. In addition, the built-in qualifier type `@Named` is defined by the package `javax.inject`.
+Three standard qualifier types are defined in the package `jakarta.enterprise.inject`. In addition, the built-in qualifier type `@Named` is defined by the package `jakarta.inject`.
 
-Every bean has the built-in qualifier `@Any`, even if it does not explicitly declare this qualifier, except for the special `@New` qualified beans defined in <<new>>.
+Every bean has the built-in qualifier `@Any`, even if it does not explicitly declare this qualifier.
 
 If a bean does not explicitly declare a qualifier other than `@Named` or `@Any`, the bean has exactly one additional qualifier, of type `@Default`. This is called the _default qualifier_.
 
@@ -267,7 +284,7 @@ public class Order {
 
 A qualifier type is a Java annotation defined as `@Retention(RUNTIME)`. Typically a qualifier type is defined as `@Target({METHOD, FIELD, PARAMETER, TYPE})`.
 
-A qualifier type may be declared by specifying the `@javax.inject.Qualifier` meta-annotation.
+A qualifier type may be declared by specifying the `@jakarta.inject.Qualifier` meta-annotation.
 
 [source, java]
 ----
@@ -376,9 +393,70 @@ For example, when the container encounters the following producer method, an ins
 [source, java]
 ----
 @Produces
-PaymentProcessor getPaymentProcessor(@Synchronous PaymentProcessor sync, 
+PaymentProcessor getPaymentProcessor(@Synchronous PaymentProcessor sync,
                                      @Asynchronous PaymentProcessor async) {
     return isSynchronous() ? sync : async;
+}
+----
+
+[[repeating_qualifiers]]
+
+==== Repeating qualifiers
+
+In some cases, it may be useful to have a repeated qualifier for your type safe resolution.  A repeated qualifier behaves just as any other qualifier does.  For example, the below qualifier is a repeatable qualifier
+
+[source, java]
+----
+@Target({ PARAMETER, FIELD, METHOD, TYPE })
+@Retention(RUNTIME)
+@Documented
+@Qualifier
+@Repeatable(Locations.class)
+public @interface Location {
+    String value();
+}
+
+@Target({ PARAMETER, FIELD, METHOD, TYPE })
+@Retention(RUNTIME)
+public @interface Locations {
+    Location[] value();
+}
+----
+
+Now you can define appropriate producers and injection points for repeated qualifiers.
+
+[source, java]
+----
+@Produces
+@Location("north")
+@Location("south")
+public Coordinate createCoordinate() {
+   // ...
+}
+
+@Inject
+@Location("north")
+@Location("south")
+private Coordinate coordinate;
+----
+
+A partial match injection point will still work in this case (from the same producer method)
+
+[source, java]
+----
+@Inject
+@Location("south")
+private Coordinate coordinate;
+----
+
+However, adding the follow producer method will continue to give you an ambiguous resolution error (assuming the other producer exists as well)
+
+[source, java]
+----
+@Produces
+@Location("south")
+public Coordinate createSouthCoordinate() {
+   // ...
 }
 ----
 
@@ -407,9 +485,14 @@ An object that represents an order is represented by a conversation scoped objec
 
 [source, java]
 ----
-@ConversationScoped 
+@ConversationScoped
 public class Order { ... }
 ----
+
+[NOTE]
+====
+Session scope and conversation scope are only available in {cdi_full}.
+====
 
 A list that contains the results of a search screen might be represented by a request scoped object:
 
@@ -425,24 +508,23 @@ The set of scope types is extensible.
 
 ==== Built-in scope types
 
-There are five standard scope types defined by this specification, all defined in the package `javax.enterprise.context`.
+There are three standard scope types defined in {cdi_lite}, all defined in the package `jakarta.enterprise.context`.
 
-* The container must provide an implementation of the @RequestScoped, @ApplicationScoped and @SessionScoped annotations defined in <<builtin_contexts>>.
+* The container must provide an implementation of the `@RequestScoped` and `@ApplicationScoped` annotations defined in <<builtin_contexts>>.
 Note that these standard scopes can be extended by third-party extensions as defined in <<context>>
-* The `@ConversationScoped` annotation represents the conversation scope defined in <<conversation_context>>.
 * Finally, there is a `@Dependent` pseudo-scope for dependent objects, as defined in <<dependent_context>>.
 
 
-If an interceptor or decorator has any scope other than `@Dependent`, non-portable behavior results.
+If an interceptor has any scope other than `@Dependent`, non-portable behavior results.
 
 [[defining_new_scope_type]]
 
 ==== Defining new scope types
 
-A scope type is a Java annotation defined as `@Retention(RUNTIME)`. Typically a scope type is defined as `@Target({TYPE, METHOD, FIELD})`. All scope types must also specify the `@javax.inject.Scope` or `@javax.enterprise.context.NormalScope` meta-annotation.
+A scope type is a Java annotation defined as `@Retention(RUNTIME)`. Typically a scope type is defined as `@Target({TYPE, METHOD, FIELD})`. All scope types must also specify the `@jakarta.inject.Scope` or `@jakarta.enterprise.context.NormalScope` meta-annotation.
 
 A scope type must not have any attributes.
-If a scope type has attributes non-portable behavior results.
+If a scope type has attributes, non-portable behavior results.
 
 For example, the following annotation declares a "business process scope":
 
@@ -455,7 +537,8 @@ For example, the following annotation declares a "business process scope":
 public @interface BusinessProcessScoped {}
 ----
 
-Custom scopes are normally defined by portable extensions, which must also provide a _context object_, as defined in <<context>>, that implements the custom scope.
+Custom scopes are normally defined by extensions, which must also provide an implementation of the `Context` interface, as defined in <<context>>, that implements the custom scope.
+Portable extensions provide a _context object_ directly, while build compatible extensions provide a class that the container has to instantiate to obtain the context object.
 
 [[declaring_bean_scope]]
 
@@ -499,7 +582,7 @@ The _default scope_ for a bean which does not explicitly declare a scope depends
 
 * If the bean does not declare any stereotype with a declared default scope, the default scope for the bean is `@Dependent`.
 * If all stereotypes declared by the bean that have some declared default scope have the same default scope, then that scope is the default scope for the bean.
-* If there are two different stereotypes declared by the bean that declare different default scopes, then there is no default scope and the bean must explicitly declare a scope.
+* If there are two different stereotypes present on the bean, directly, indirectly, or transitively, that declare different default scopes, then there is no default scope and the bean must explicitly declare a scope.
 If it does not explicitly declare a scope, the container automatically detects the problem and treats it as a definition error.
 
 
@@ -528,9 +611,9 @@ A bean class with a _bean defining annotation_ is said to be an _implicit bean_.
 
 The set of bean defining annotations contains:
 
-* `@ApplicationScoped`, `@SessionScoped`, `@ConversationScoped` and `@RequestScoped` annotations,  
+* `@ApplicationScoped` and `@RequestScoped` annotations,
 * all other normal scope types,
-* `@Interceptor` and `@Decorator` annotations,
+* `@Interceptor` annotation,
 * all stereotype annotations (i.e. annotations annotated with `@Stereotype`),
 * and the `@Dependent` scope annotation.
 
@@ -558,7 +641,7 @@ public class CoffeeShop
 }
 ----
 
-Note that to ensure compatibility with other JSR-330 implementations, all pseudo-scope annotations except `@Dependent` *are not* bean defining annotations.
+Note that to ensure compatibility with other Jakarta Dependency Injection implementations, all pseudo-scope annotations except `@Dependent` *are not* bean defining annotations.
 However, a stereotype annotation including a pseudo-scope annotation *is* a bean defining annotation.
 
 [[names]]
@@ -586,7 +669,7 @@ Bean names are used by the rules of bean name resolution defined in <<name_resol
 
 ==== Declaring the bean name
 
-To specify the name of a bean, the qualifier `@javax.inject.Named` is applied to the bean class or producer method or field.
+To specify the name of a bean, the qualifier `@jakarta.inject.Named` is applied to the bean class or producer method or field.
 This bean is named `currentOrder`:
 
 [source, java]
@@ -614,7 +697,7 @@ The rules for determining the default name for a bean are defined in <<managed_b
 
 If `@Named` is not declared by the bean, nor by its stereotypes, a bean has no name.
 
-If an interceptor or decorator has a name, non-portable behavior results.
+If an interceptor has a name, non-portable behavior results.
 
 [[alternatives]]
 
@@ -636,7 +719,7 @@ public class MockOrder extends Order { ... }
 
 Alternatively, an alternative may be declared by annotating a bean, producer method or producer field with a stereotype that declares an `@Alternative` annotation.
 
-If an interceptor or decorator is an alternative, non-portable behavior results.
+If an interceptor is an alternative, non-portable behavior results.
 
 [[stereotypes]]
 
@@ -654,7 +737,8 @@ A stereotype encapsulates any combination of:
 A stereotype may also specify that:
 
 * all beans with the stereotype have defaulted bean names, or that
-* all beans with the stereotype are alternatives.
+* all beans with the stereotype are alternatives, or that
+* all beans with the stereotype have predefined `@Priority`.
 
 
 A bean may declare zero, one or multiple stereotypes.
@@ -665,7 +749,7 @@ A bean may declare zero, one or multiple stereotypes.
 
 A bean stereotype is a Java annotation defined as `@Retention(RUNTIME)`. Typically a bean stereotype is defined as `@Target({TYPE, METHOD, FIELD})`, `@Target(TYPE)`, `@Target(METHOD)`, `@Target(FIELD)` or `@Target({METHOD, FIELD})`.
 
-A stereotype may be declared by specifying the `@javax.enterprise.inject.Stereotype` meta-annotation.
+A stereotype may be declared by specifying the `@jakarta.enterprise.inject.Stereotype` meta-annotation.
 
 [source, java]
 ----
@@ -760,6 +844,29 @@ We may specify that all mock objects are alternatives:
 public @interface Mock {}
 ----
 
+[[priority_stereotype]]
+
+===== Declaring stereotype with `@Priority`
+
+A stereotype may declare a `@Priority` annotation which functions as a means of enabling and ordering affected beans.
+
+If there are two different stereotypes present on a bean, directly, indirectly, or transitively, that declare different priority values, then the bean must explicitly declare a `@Priority` annotation.
+If the bean does not explicitly declare priority, the container automatically detects the problem and treats it as a definition error.
+
+If a bean explicitly declares priority, any priority values declared by stereotypes are ignored.
+
+Following sample shows a stereotype that can be used to mark bean as globally enabled alternative:
+
+[source, java]
+----
+@Alternative
+@Priority(Interceptor.Priority.APPLICATION + 5)
+@Stereotype
+@Target(TYPE)
+@Retention(RUNTIME)
+public @interface Mock {}
+----
+
 [[stereotypes_with_additional_stereotypes]]
 
 ===== Stereotypes with additional stereotypes
@@ -812,7 +919,7 @@ public class LoginAction { ... }
 
 ==== Built-in stereotypes
 
-The built-in stereotype `@javax.enterprise.inject.Model` is intended for use with beans that define the _model_ layer of an MVC web application architecture such as JSF:
+The built-in stereotype `@jakarta.enterprise.inject.Model` is intended for use with beans that define the _model_ layer of an MVC web application architecture such as JSF:
 
 [source, java]
 ----
@@ -824,7 +931,7 @@ The built-in stereotype `@javax.enterprise.inject.Model` is intended for use wit
 public @interface Model {}
 ----
 
-In addition, the special-purpose `@Interceptor` and `@Decorator` stereotypes are defined in <<declaring_interceptor>> and <<decorator_annotation>>.
+In addition, the special-purpose `@Interceptor` stereotype is defined in <<declaring_interceptor>>.
 
 [[exceptions]]
 
@@ -834,9 +941,9 @@ When the application violates a rule defined by this specification, the containe
 There are three kinds of problem:
 
 * Definition errors - occur when a single bean definition violates the rules of this specification.
-If a definition error exists, the container must throw a subclass of `javax.enterprise.inject.spi.DefinitionException`.
-* Deployment problems - occur when there are problems resolving dependencies, or inconsistent specialization, in a particular deployment.
-If a deployment problem occurs, the container must throw a subclass of `javax.enterprise.inject.spi.DeploymentException`.
+If a definition error exists, the container must throw a subclass of `jakarta.enterprise.inject.spi.DefinitionException`.
+* Deployment problems - occur when there are problems resolving dependencies, or inconsistent specialization (in {cdi_full}), in a particular deployment.
+If a deployment problem occurs, the container must throw a subclass of `jakarta.enterprise.inject.spi.DeploymentException`.
 * Exceptions - occur at runtime
 
 

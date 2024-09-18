@@ -1,8 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
  * Copyright 2015, Red Hat, Inc., and individual contributors
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +14,31 @@
 
 package org.jboss.cdi.api.test;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.CDIProvider;
-import javax.enterprise.util.TypeLiteral;
 import java.lang.annotation.Annotation;
 import java.util.Iterator;
+
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDIProvider;
+import jakarta.enterprise.util.TypeLiteral;
 
 /**
  * Created by antoine on 16/12/2015.
  */
 public class DummyCDIProvider2 implements CDIProvider {
 
-
     @Override
     public CDI<Object> getCDI() {
         return new DummyCDI2();
     }
 
-    public static class DummyCDI2 extends CDI<Object> {
+    @Override
+    public int getPriority() {
+        return 10;
+    }
 
+    public static class DummyCDI2 extends CDI<Object> {
 
         @Override
         public BeanManager getBeanManager() {
@@ -72,6 +73,16 @@ public class DummyCDIProvider2 implements CDIProvider {
         @Override
         public void destroy(Object instance) {
 
+        }
+
+        @Override
+        public Handle<Object> getHandle() {
+            return null;
+        }
+
+        @Override
+        public Iterable<Handle<Object>> handles() {
+            return null;
         }
 
         @Override

@@ -1,8 +1,5 @@
 /*
- * JBoss, Home of Professional Open Source
  * Copyright 2015, Red Hat, Inc., and individual contributors
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +14,20 @@
 
 package org.jboss.cdi.api.test;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.CDIProvider;
 import java.io.FileWriter;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDIProvider;
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 /**
  * Test for CDIProvider resolution in CDI abstract class.
+ *
  * @author Antoine Sabot-durand
  *
  */
@@ -43,7 +43,6 @@ public class CDITest {
             discoveredProviders = null;
         }
 
-
     }
 
     @BeforeMethod
@@ -57,7 +56,6 @@ public class CDITest {
     public void testWithoutServiceFile() throws Exception {
         CDI.current();
     }
-
 
     @Test
     public void testWithOneGoodCDIProvider() throws Exception {
@@ -93,12 +91,21 @@ public class CDITest {
     @Test
     public void testWithTwoGoodCDIProvider() throws Exception {
         FileWriter fw = new FileWriter(SERVICE_FILE_NAME);
+        fw.write(DummyCDIProvider2.class.getName());
+        fw.write('\n');
+        fw.write(DummyCDIProvider.class.getName());
+        fw.close();
+        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider.DummyCDI.class));
+    }
+
+    @Test
+    public void testWithTwoGoodCDIProviderReverse() throws Exception {
+        FileWriter fw = new FileWriter(SERVICE_FILE_NAME);
         fw.write(DummyCDIProvider.class.getName());
         fw.write('\n');
         fw.write(DummyCDIProvider2.class.getName());
         fw.close();
-        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider.DummyCDI.class) ||
-                CDI.current().getClass().equals(DummyCDIProvider2.DummyCDI2.class));
+        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider.DummyCDI.class));
     }
 
     @Test
@@ -108,10 +115,20 @@ public class CDITest {
         fw.write('\n');
         fw.write(DummyCDIProvider2.class.getName());
         fw.close();
-        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider.DummyCDI.class) ||
-                CDI.current().getClass().equals(DummyCDIProvider2.DummyCDI2.class));
+        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider2.DummyCDI2.class));
     }
 
+    @Test
+    public void testWithThreeCDIProviderOneWithNullCDIAndOthersGood() throws Exception {
+        FileWriter fw = new FileWriter(SERVICE_FILE_NAME);
+        fw.write(DummyCDIProviderWithNullCDI.class.getName());
+        fw.write('\n');
+        fw.write(DummyCDIProvider2.class.getName());
+        fw.write('\n');
+        fw.write(DummyCDIProvider.class.getName());
+        fw.close();
+        Assert.assertTrue(CDI.current().getClass().equals(DummyCDIProvider.DummyCDI.class));
+    }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testWithFirstGoodCDIProvider() throws Exception {
@@ -123,12 +140,21 @@ public class CDITest {
         CDI.current();
     }
 
-
     @Test(expectedExceptions = IllegalStateException.class)
     public void testWithCDIProviderBadClass() throws Exception {
         FileWriter fw = new FileWriter(SERVICE_FILE_NAME);
         fw.write(getClass().getName());
         fw.close();
+        CDI.current();
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testForClosedContainer() throws Exception {
+        FileWriter fw = new FileWriter(SERVICE_FILE_NAME);
+        fw.write(ClosableCDIProvider.class.getName());
+        fw.close();
+        CDI.current();
+        ClosableCDIProvider.closeContainer();
         CDI.current();
     }
 }

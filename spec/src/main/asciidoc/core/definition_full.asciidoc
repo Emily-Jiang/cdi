@@ -1,0 +1,51 @@
+////
+Copyright (c) 2021 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
+[partintro]
+--
+{cdi_full} contains all the functionality defined in {cdi_lite} and adds some additional features such as specialization, decorators, session scope or conversation scope.
+Some of these concepts were briefly mentioned in the previous {cdi_lite} chapter and this section of specification defines them in depth.
+
+All rules from the {cdi_lite} specification apply to {cdi_full}, unless the {cdi_full} specification says otherwise.
+Most sections of the {cdi_full} specification add new rules on top of the {cdi_lite} specification, but some override the corresponding section of the {cdi_lite} specification and provide a replacing set of rules.
+--
+
+[[scopes_full]]
+
+== Scopes in {cdi_full}
+
+[[builtin_scopes_full]]
+
+=== Built-in scope types in {cdi_full}
+
+In addition to built-in scope types defined in <<builtin_scopes>>, the following two built-in scopes are present:
+
+* The `@SessionScoped` annotation represents the session scope defined in <<session_context_full>>.
+* The `@ConversationScoped` annotation represents the conversation scope defined in <<conversation_context_full>>.
+
+In addition to rules defined in <<builtin_scopes>>, the following rules apply.
+
+If a decorator has any scope other than `@Dependent`, non-portable behavior results.
+
+[[bean_defining_annotations_full]]
+
+=== Bean defining annotations in {cdi_full}
+
+In addition to bean defining annotations defined in <<bean_defining_annotations>>, the following bean defining annotations are present:
+
+* `@SessionScoped` and `@ConversationScoped` annotations,
+* `@Decorator` annotation.
+
+[[builtin_stereotypes_full]]
+
+==== Built-in stereotypes in {cdi_full}
+
+In addition to built-in stereotypes defined in <<builtin_stereotypes>>, the following built-in stereotype is present.
+
+The special-purpose `@Decorator` stereotype is defined in <<decorator_annotation>>.

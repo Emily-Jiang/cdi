@@ -1,3 +1,12 @@
+////
+Copyright (c) 2015 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
 [[injection_and_resolution]]
 
 == Dependency injection and lookup
@@ -24,19 +33,19 @@ The container is not required to support circular chains of dependencies where e
 
 Beans and their clients may be deployed in _modules_ in a module architecture.
 In a module architecture, certain modules are considered _bean archives_.
-The library may be an explicit bean archive or an implicit bean archive, as defined in <<bean_archive>>.
+In {cdi_lite}, a library that is a bean archive is always an implicit bean archive, as defined in <<bean_archive>>.
+Other kinds of bean archives exist in {cdi_full}.
 
 A bean packaged in a certain module is available for injection, lookup and name resolution to classes packaged in some other module if and only if the bean class of the bean is required to be _accessible_ to the other module by the class accessibility requirements of the module architecture.
 
-An alternative is not available for injection, lookup or name resolution to classes in a module unless the module is a bean archive and the alternative is explicitly _selected_ for the bean archive or the application.
+An alternative is not available for injection, lookup or name resolution to classes in a module unless the module is a bean archive and the alternative is explicitly _selected_ for the application.
 
 [[declaring_selected_alternatives]]
 
 ==== Declaring selected alternatives
 
-This specification defines two methods of selecting alternatives.
-From Contexts and Dependency Injection 1.1 onwards the `@Priority` annotation allows an alternative to be selected for an entire application.
-Contexts and Dependency Injection 1.0 allowed only for an alternative to be selected for a bean archive.
+{cdi_lite} defines one method of selecting alternatives: the `@Priority` annotation allows an alternative to be selected for an entire application.
+{cdi_full} defines an additional method of selecting alternatives, which is specified therein.
 
 [[declaring_selected_alternatives_application]]
 
@@ -45,47 +54,9 @@ Contexts and Dependency Injection 1.0 allowed only for an alternative to be sele
 An alternative may be given a priority for the application:
 
 * by placing the `@Priority` annotation on the bean class of a managed bean, or
-* by placing the `@Priority` annotation on the bean class that declares the producer method, field or resource.
-
-[[declaring_selected_alternatives_bean_archive]]
-
-===== Declaring selected alternatives for a bean archive
-
-
-An alternative may be explicitly declared using the `<alternatives>` element of the `beans.xml` file of the bean archive.
-The `<alternatives>` element contains a list of bean classes and stereotypes.
-An alternative is selected for the bean archive if either:
-
-* the alternative is a managed bean and the bean class of the bean is listed,
-* the alternative is a producer method, field or resource, and the bean class that declares the method or field is listed, or
-* any `@Alternative` stereotype of the alternative is listed.
-
-[source,xml]
-----
-<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd">
-   <alternatives>
-      <class>com.acme.myfwk.InMemoryDatabase</class>
-      <stereotype>com.acme.myfwk.Mock</stereotype>
-      <stereotype>com.acme.site.Australian</stereotype>
-   </alternatives>
-</beans>
-----
-
-For each child `<class>` element the container verifies that either:
-
-* a class `T` exists which is annotated with `@Alternative` or contains a producer field or producer method which is annotated with `@Alternative`, or
-* an alternative `Bean<T>` exists for the bean class.
-
-Otherwise the container automatically detects the problem and treats it as a deployment problem.
-
-Each child `<stereotype>` element must specify the name of an `@Alternative` stereotype annotation.
-If there is no annotation with the specified name, or the annotation is not an `@Alternative` stereotype, the container automatically detects the problem and treats it as a deployment problem.
-
-If the same type is listed twice under the `<alternatives>` element, the container automatically detects the problem and treats it as a deployment problem.
-
-For a custom implementation of the `Bean` interface defined in <<bean>>, the container calls `isAlternative()` to determine whether the bean is an alternative, and `getBeanClass()` and `getStereotypes()` to determine whether an alternative is selected in a certain bean archive.
+* by placing the `@Priority` annotation on the producer method, field or resource, or
+* by placing the `@Priority` annotation on the bean class that declares the producer method, field or resource, or
+* by placing the `@Priority` annotation on a stereotype that is applied to the bean class, producer method or producer field.
 
 [[enablement]]
 
@@ -94,23 +65,10 @@ For a custom implementation of the `Bean` interface defined in <<bean>>, the con
 A bean is said to be _enabled_ if:
 
 * it is deployed in a bean archive, and
-* it is not a producer method or field of a disabled bean, and
-* it is not specialized by any other enabled bean, as defined in <<specialization>>, and either
-* it is not an alternative, or it is a selected alternative of at least one bean archive or the application.
-
+* it is not a producer method or field of a disabled bean, and either
+* it is not an alternative, or it is a selected alternative for the application.
 
 Otherwise, the bean is said to be disabled.
-
-Note that <<new>> defines a special rule that determines whether a `@New` qualified bean is enabled or disabled.
-This rule applies as only to `@New` qualified beans, as an exception to the normal rule defined here.
-
-[[inconsistent_specialization]]
-
-==== Inconsistent specialization
-
-Suppose an enabled bean X specializes a second bean Y.
-If there is another enabled bean that specializes Y we say that _inconsistent specialization_ exists.
-The container automatically detects inconsistent specialization and treats it as a deployment problem.
 
 [[inter_module_injection]]
 
@@ -118,13 +76,10 @@ The container automatically detects inconsistent specialization and treats it as
 
 A bean is _available for injection_ in a certain module if:
 
-* the bean is not an interceptor or decorator,
+* the bean is not an interceptor
 * the bean is enabled,
-* the bean is either not an alternative, or the module is a bean archive and the bean is a selected alternative of the bean archive, or the bean is a selected alternative of the application,  and
+* the bean is either not an alternative, or the bean is a selected alternative for the application, and
 * the bean class is required to be accessible to classes in the module, according to the class accessibility requirements of the module architecture.
-
-
-For a custom implementation of the `Bean` interface defined in <<bean>>, the container calls `getBeanClass()` to determine the bean class of the bean and `InjectionPoint.getMember()` and then `Member.getDeclaringClass()` to determine the class that declares an injection point.
 
 [[typesafe_resolution]]
 
@@ -144,18 +99,15 @@ A bean is _assignable_ to a given injection point if:
 
 * The bean has a bean type that matches the required type.
 For this purpose, primitive types are considered to match their corresponding wrapper types in `java.lang` and array types are considered to match only if their element types are identical.
-Parameterized and raw types are considered to match if they are identical or if the bean type is _assignable_ to the required type, as defined in <<assignable_parameters>> or <<delegate_assignable_parameters>>.
+Parameterized and raw types are considered to match if they are identical or if the bean type is _assignable_ to the required type, as defined in <<assignable_parameters>>.
 * The bean has all the required qualifiers.
-If no required qualifiers were explicitly specified, the container assumes the required qualifier `@Default`. A bean has a required qualifier if it has a qualifier with (a) the same type and (b) the same annotation member value for each member which is not annotated `@javax.enterprise.util.Nonbinding`.
+If no required qualifiers were explicitly specified, the container assumes the required qualifier `@Default`. A bean has a required qualifier if it has a qualifier with (a) the same type and (b) the same annotation member value for each member which is not annotated `@jakarta.enterprise.util.Nonbinding`.
 
 
 A bean is eligible for injection to a certain injection point if:
 
 * it is available for injection in the module that contains the class that declares the injection point, and
 * it is assignable to the injection point (using <<assignable_parameters>>).
-
-
-For a custom implementation of the `Bean` interface defined in <<bean>>, the container calls `getTypes()` and `getQualifiers()` to determine the bean types and qualifiers.
 
 [[unsatisfied_and_ambig_dependencies]]
 
@@ -164,20 +116,25 @@ For a custom implementation of the `Bean` interface defined in <<bean>>, the con
 An _unsatisfied dependency_ exists at an injection point when no bean is eligible for injection to the injection point.
 An _ambiguous dependency_ exists at an injection point when multiple beans are eligible for injection to the injection point.
 
-Note that an unsatisfied or ambiguous dependency cannot exist for a decorator delegate injection point, defined in <<delegate_attribute>>.
-
 When an ambiguous dependency exists, the container attempts to resolve the ambiguity.
 The container eliminates all eligible beans that are not alternatives, except for producer methods and fields of beans that are alternatives.
 If:
 
 * there is exactly one bean remaining, the container will select this bean, and the ambiguous dependency is called resolvable.
-* all the beans left are alternatives with a priority, or producer methods or fields of beans that are alternatives with a priority, then the container will determine the highest priority value, and eliminate all beans, except for alternatives with the highest priority and producer methods and fields of alternatives with the highest priority value.
+* all the beans left are alternatives with a priority, or producer methods or fields of beans that are alternatives with a priority, then the container will determine the highest priority value and eliminate all beans, except for:
++
+--
+** alternatives with the highest priority value,
+** producer methods and fields of alternatives, where either the producer method or field has the highest priority value, or the declaring alternative has the highest priority value.
+--
++
 If there is exactly one bean remaining, the container will select this bean, and the ambiguous dependency is called resolvable.
+
+For the purpose of determining the priority of any producer method or field during ambiguity resolution, the priority of the producer method or field is considered first.
+If the producer method or field does not have a priority, the priority of the managed bean that declares the producer method or field is used.
 
 The container must validate all injection points of all enabled beans, all observer methods and all disposer methods when the application is initialized to ensure that there are no unsatisfied or unresolvable ambiguous dependencies.
 If an unsatisfied or unresolvable ambiguous dependency exists, the container automatically detects the problem and treats it as a deployment problem.
-
-For a custom implementation of the `Bean` interface defined in <<bean>>, the container calls `getInjectionPoints()` to determine the set of injection points.
 
 [[legal_injection_point_types]]
 
@@ -218,9 +175,7 @@ Furthermore, `UserDao` is eligible for injection to any injection point of type 
 public class UserDao extends Dao<User> { ... }
 ----
 
-A raw bean type is considered assignable to a parameterized required type if the raw types are identical and all type parameters of the required type are either unbounded type variables or java.lang.Object.
-
-Note that a special set of rules, defined in <<delegate_assignable_parameters>>, apply if and only if the injection point is a decorator delegate injection point.
+A raw bean type is considered assignable to a parameterized required type if the raw types are identical and all type parameters of the required type are either unbounded type variables or `java.lang.Object`.
 
 [[primitive_types_and_null_values]]
 
@@ -330,7 +285,7 @@ For a custom implementation of the `Bean` interface defined in <<bean>>, the con
 
 An _ambiguous name_ exists when a name resolves to multiple beans.
 When an ambiguous name exists, the container attempts to resolve the ambiguity.
-The container eliminates all eligible beans that are not alternatives selected for the bean archive or selected for the application, except for producer methods and fields of beans that are alternatives.
+The container eliminates all eligible beans that are not alternatives selected for the application, except for producer methods and fields of beans that are alternatives.
 If:
 
 * there is exactly one bean remaining, the container will select this bean, and the ambiguous dependency is called _resolvable_.
@@ -358,15 +313,11 @@ A client proxy implements/extends some or all of the bean types of the bean and 
 There are a number of reasons for this indirection:
 
 * The container must guarantee that when any valid injected reference to a bean of normal scope is invoked, the invocation is always processed by the current instance of the injected bean.
-In certain scenarios, for example if a request scoped bean is injected into a session scoped bean, or into a servlet, this rule requires an indirect reference.
+In certain scenarios, for example if a request scoped bean is injected into an application scoped bean, or into a servlet, this rule requires an indirect reference.
 (Note that the `@Dependent` pseudo-scope is not a normal scope.)
 * The container may use a client proxy when creating beans with circular dependencies.
 This is only necessary when the circular dependencies are initialized via a managed bean constructor or producer method parameter.
 (Beans with scope `@Dependent` never have circular dependencies.)
-* Finally, client proxies may be passivated, even when the bean itself may not be.
-Therefore the container must use a client proxy whenever a bean with normal scope is injected into a bean with a passivating scope, as defined in <<passivating_scope>>.
-(On the other hand, beans with scope `@Dependent` must be serialized along with their client.)
-
 
 Client proxies are never required for a bean whose scope is a pseudo-scope such as `@Dependent`.
 
@@ -492,7 +443,7 @@ The container is also responsible for destroying dependent objects created durin
 
 ==== Injection point metadata
 
-The interface `javax.enterprise.inject.spi.InjectionPoint` provides access to metadata about an injection point.
+The interface `jakarta.enterprise.inject.spi.InjectionPoint` provides access to metadata about an injection point.
 An instance of `InjectionPoint` may represent:
 
 * an injected field or a parameter of a bean constructor, initializer method, producer method, disposer method or observer method, or
@@ -519,13 +470,12 @@ If the injection point represents a dynamically obtained instance, the `getBean(
 If the injection point represents a dynamically obtained instance, the `getType()` and `getQualifiers()` methods should return the required type (as defined by `Instance.select()`), and required qualifiers of the injection point including any additional required qualifiers (as defined by `Instance.select()`).
 * The `getMember()` method returns the `Field` object in the case of field injection, the `Method` object in the case of method parameter injection, or the `Constructor` object in the case of constructor parameter injection.
 If the injection point represents a dynamically obtained instance, the `getMember()` method returns the `Field` object representing the field that defines the `Instance` injection point in the case of field injection, the `Method` object representing the method that defines the `Instance` injection point in the case of method parameter injection, or the `Constructor` object representing the constructor that defines the `Instance` injection point in the case of constructor parameter injection.
-* The `getAnnotated()` method returns an instance of `javax.enterprise.inject.spi.AnnotatedField` or `javax.enterprise.inject.spi.AnnotatedParameter`, depending upon whether the injection point is an injected field or a constructor/method parameter.
-If the injection point represents a dynamically obtained instance, then the `getAnnotated()` method returns an instance of `javax.enterprise.inject.spi.AnnotatedField` or `javax.enterprise.inject.spi.AnnotatedParameter` representing the `Instance` injection point, depending upon whether the injection point is an injected field or a constructor/method parameter.
-* The `isDelegate()` method returns `true` if the injection point is a decorator delegate injection point, and `false` otherwise.
-If the injection point represents a dynamically obtained instance then `isDelegate()` returns false.
+* The `getAnnotated()` method may, in {cdi_lite} environment, always return `null`.
+Behavior of this method in {cdi_full} is specified therein.
+* The `isDelegate()` method may, in {cdi_lite} environment, always return `false`.
+Behavior of this method in {cdi_full} is specified therein.
 * The `isTransient()` method returns `true` if the injection point is a transient field, and `false` otherwise.
 If the injection point represents a dynamically obtained instance then the `isTransient()` method returns `true` if the `Instance` injection point is a transient field, and `false` otherwise. If this injection point is declared as transient, after bean's passivation, the value will not be restored. Instance<> injection point is the preferred approach.
-
 
 Occasionally, a bean with scope `@Dependent` needs to access metadata relating to the object into which it is injected.
 For example, the following producer method creates injectable `Logger` s.
@@ -539,7 +489,6 @@ The log category of a `Logger` depends upon the class of the object into which i
 ----
 
 The container must provide a bean with scope `@Dependent`, bean type `InjectionPoint` and qualifier `@Default`, allowing dependent objects, as defined in <<dependent_objects>>, to obtain information about the injection point to which they belong.
-The built-in implementation must be a passivation capable dependency, as defined in <<passivation_capable_dependency>>.
 
 If a bean that declares any scope other than `@Dependent` has an injection point of type `InjectionPoint` and qualifier `@Default`, the container automatically detects the problem and treats it as a definition error.
 
@@ -551,36 +500,31 @@ If a class supporting injection that is not a bean has an injection point of typ
 
 ==== Bean metadata
 
-The interfaces `Bean`, `Interceptor` and `Decorator` provide metadata about a bean.
+The interfaces `Bean` and `Interceptor`  provide metadata about a bean.
 
-The container must provide beans allowing a bean instance to obtain a `Bean`, `Interceptor` or `Decorator` instance containing its metadata:
+The container must provide beans allowing a bean instance to obtain a `Bean` or `Interceptor`  instance containing its metadata:
 
 * a bean with scope `@Dependent`, qualifier `@Default` and type `Bean`  which can be injected into any bean instance
 * a bean with scope `@Dependent`, qualifier `@Default` and type `Interceptor`  which can be injected into any interceptor instance
-* a bean with scope `@Dependent`, qualifier `@Default` and type `Decorator`  which can be injected into any decorator instance
 
-Additionally, the container must provide beans allowing interceptors and decorators to obtain information about the beans they intercept and decorate:
 
-* a bean with scope `@Dependent`, qualifier `@Intercepted` and type `Bean` which can be injected into any interceptor instance, and
-* a bean with scope `@Dependent`, qualifier `@Decorated` and type `Bean` which can be injected into any decorator instance.
+Additionally, the container must provide beans allowing interceptors to obtain information about the beans they intercept:
+
+* a bean with scope `@Dependent`, qualifier `@Intercepted` and type `Bean` which can be injected into any interceptor instance.
 
 
 These beans are passivation capable dependencies, as defined in <<passivation_capable_dependency>>.
 
 If an `Interceptor` instance is injected into a bean instance other than an interceptor instance, the container automatically detects the problem and treats it as a definition error.
 
-If a `Decorator` instance is injected into a bean instance other than a decorator instance, the container automatically detects the problem and treats it as a definition error.
-
 If a `Bean` instance with qualifier `@Intercepted` is injected into a bean instance other than an interceptor instance, the container automatically detects the problem and treats it as a definition error.
 
-If a `Bean` instance with qualifier `@Decorated` is injected into a bean instance other than a decorator instance, the container automatically detects the problem and treats it as a definition error.
 
 The injection of bean metadata is restricted.
 If:
 
-* the injection point is a field, an initializer method parameter or a bean constructor, with qualifier `@Default`, then the type parameter of the injected `Bean`, `Interceptor` or `Decorator` must be the same as the type declaring the injection point, or
+* the injection point is a field, an initializer method parameter or a bean constructor, with qualifier `@Default`, then the type parameter of the injected `Bean`, or `Interceptor` must be the same as the type declaring the injection point, or
 * the injection point is a field, an initializer method parameter or a bean constructor of an interceptor, with qualifier `@Intercepted`, then the type parameter of the injected `Bean` must be an unbounded wildcard, or
-* the injection point is a field, an initializer method parameter or a bean constructor of a decorator, with qualifier `@Decorated`, then the type parameter of the injected `Bean` must be the same as the delegate type, or
 * the injection point is a producer method parameter then the type parameter of the injected `Bean` must be the same as the producer method return type, or
 * the injection point is a parameter of a disposer method then the container automatically detects the problem and treats it as a definition error.
 
@@ -611,7 +555,7 @@ For example, it may not be used when:
 * we would like to iterate over all beans of a certain type.
 
 
-In these situations, an instance of the `javax.enterprise.inject.Instance` interface may be injected:
+In these situations, an instance of the `jakarta.enterprise.inject.Instance` interface may be injected:
 
 [source, java]
 ----
@@ -645,13 +589,6 @@ PaymentProcessor pp = anyPaymentProcessor.select(qualifier).get().process(paymen
 
 In this example, the returned bean has qualifier `@Synchronous` or `@Asynchronous` depending upon the value of `synchronously`.
 
-Finally, the `@New` qualifier may be used, allowing the application to obtain a `@New` qualified bean, as defined in <<new>>:
-
-[source, java]
-----
-@Inject @New(ChequePaymentProcessor.class) Instance<PaymentProcessor> chequePaymentProcessor;
-----
-
 It's even possible to iterate over a set of beans:
 
 [source, java]
@@ -672,14 +609,21 @@ The `Instance` interface provides a method for obtaining instances of beans with
 ----
 public interface Instance<T> extends Iterable<T>, Provider<T> {
 
-    public Instance<T> select(Annotation... qualifiers);
-    public <U extends T> Instance<U> select(Class<U> subtype, Annotation... qualifiers);
-    public <U extends T> Instance<U> select(TypeLiteral<U> subtype, Annotation... qualifiers);
+    Instance<T> select(Annotation... qualifiers);
+    <U extends T> Instance<U> select(Class<U> subtype, Annotation... qualifiers);
+    <U extends T> Instance<U> select(TypeLiteral<U> subtype, Annotation... qualifiers);
 
-    public boolean isUnsatisfied();
-    public boolean isAmbiguous();
+    Stream<T> stream();
 
-    public void destroy(T instance);
+    boolean isUnsatisfied();
+    boolean isAmbiguous();
+    boolean isResolvable();
+
+    void destroy(T instance);
+
+    Handle<T> getHandle();
+    Iterable<Handle<T>> handles();
+    Stream<Handle<T>> handlesStream();
 
 }
 ----
@@ -699,6 +643,7 @@ For example, this injected `Instance` has required type `PaymentProcessor` and r
 
 The `select()` method returns a child `Instance` for a given required type and additional required qualifiers.
 If no required type is given, the required type is the same as the parent.
+Rules specified at <<injection_point_default_qualifier>> are applied before performing typesafe resolution.
 
 For example, this child `Instance` has required type `AsynchronousPaymentProcessor` and additional required qualifier `@Asynchronous`:
 
@@ -710,7 +655,7 @@ Instance<AsynchronousPaymentProcessor> async = anyPaymentProcessor.select(
 
 If an injection point of raw type `Instance` is defined, the container automatically detects the problem and treats it as a definition error.
 
-If two instances of the same qualifier type are passed to `select()`, an `IllegalArgumentException` is thrown.
+If two instances of the same non repeating qualifier type are passed to `select()`, an `IllegalArgumentException` is thrown.
 
 If an instance of an annotation that is not a qualifier type is passed to `select()`, an `IllegalArgumentException` is thrown.
 
@@ -724,38 +669,96 @@ The `get()` method must:
 The `iterator()` method must:
 
 * Identify the set of beans that have the required type and required qualifiers and are eligible for injection into the class into which the parent `Instance` was injected, according to the rules of typesafe resolution, as defined in <<performing_typesafe_resolution>>, resolving ambiguities according to <<unsatisfied_and_ambig_dependencies>>.
+* If typesafe resolution results in an unsatisfied dependency, the set of resulting beans is empty.
+  If typesafe resolution results in an ambiguous dependency and the set of candidate beans contains at least one alternative, the set of resulting beans contains all beans that were not eliminated during ambiguity resolution.
+  If typesafe resolution results in an ambiguous dependency and the set of candidate beans contains no alternative, the set of resulting beans contains all candidate beans.
 * Return an `Iterator`, that iterates over the set of contextual references for the resulting beans and required type, as defined in <<contextual_reference>>.
 
+The `stream()` method must:
 
-The method `isUnsatisfied()` returns `true` if there is no bean that has the required type and qualifiers and is eligible for injection into the class into which the parent `Instance` was injected, or `false` otherwise.
+* Identify the set of beans that have the required type and required qualifiers and are eligible for injection into the class into which the parent `Instance` was injected, according to the rules of typesafe resolution, as defined in <<performing_typesafe_resolution>>, resolving ambiguities according to <<unsatisfied_and_ambig_dependencies>>.
+* If typesafe resolution results in an unsatisfied dependency, the set of resulting beans is empty.
+  If typesafe resolution results in an ambiguous dependency and the set of candidate beans contains at least one alternative, the set of resulting beans contains all beans that were not eliminated during ambiguity resolution.
+  If typesafe resolution results in an ambiguous dependency and the set of candidate beans contains no alternative, the set of resulting beans contains all candidate beans.
+* Return a `Stream`, that can stream over the set of contextual references for the resulting beans and required type, as defined in <<contextual_reference>>.
 
-The method `isAmbiguous()` returns `true` if there is more than one bean that has the required type and qualifiers and is eligible for injection into the class into which the parent `Instance` was injected, or `false` otherwise.
+The methods `isUnsatisfied()`, `isAmbiguous()` and `isResolvable()` must:
+
+* Identify the set of beans that have the required type and required qualifiers and are eligible for injection into the class into which the parent `Instance` was injected, according to the rules of typesafe resolution, as defined in <<performing_typesafe_resolution>>, resolving ambiguities according to <<unsatisfied_and_ambig_dependencies>>.
+* The method `isUnsatisfied()` returns `true` if there is no bean found, or `false` otherwise.
+* The method `isAmbiguous()` returns `true` if there is more than one bean found, or `false` otherwise.
+* The method `isResolvable()` returns `true` if there is exactly one bean found, or `false` otherwise.
 
 The method `destroy()` instructs the container to destroy the instance.
 The bean instance passed to `destroy()` should be a dependent scoped bean instance obtained from the same `Instance` object, or a client proxy for a normal scoped bean.
 Applications are encouraged to always call `destroy()` when they no longer require an instance obtained from `Instance`. All built-in normal scoped contexts support destroying bean instances.
 An `UnsupportedOperationException` is thrown if the active context object for the scope type of the bean does not support destroying bean instances.
 
+The `getHandle()` method must:
+
+* Return an initialized contextual reference `Handle<T>` for a bean that has the required type and qualifiers and is eligible for injection. The contextual reference must be resolved lazily, i.e. when first needed. <<handle_interface>> is described in a separate paragraph.
+* Throw `UnsatisfiedResolutionException` if there is no bean with given type and qualifiers.
+* Throw `AmbiguousResolutionException` if there is more than one bean given type and qualifiers.
+
+The `handles()` method must:
+
+* Allow iterating over contextual reference handles for all beans that would be produced by the `iterator()` (or `stream()`) method.
+* Return stateless `Iterable`. Therefore, each `Iterable#iterator()` produces a new set of handles.
+
+The `handlesStream()` is a `Stream` equivalent of the aforementioned `handles()` method.
+
+[[handle_interface]]
+===== The `Handle` interface
+
+`Handle` is an interface representing a contextual reference handle.
+It is an abstraction allowing inspection of bean metadata via `Bean<?>` objects.
+Handles have to resolve their contextual references lazily, i.e. when their `get()` method is invoked.
+Last but not least, this interface can be used to destroy the contextual instance once not needed.
+
+[source, java]
+----
+public interface Handle<T> extends AutoCloseable {
+
+        T get();
+        Bean<T> getBean();
+        void destroy();
+        void close();
+
+}
+----
+
+The `get()` method returns a contextual reference object. The contextual reference is resolved lazily. Throws
+`IllegalStateException` if invoked on `Handle` that previously successfully destroyed its underlying contextual reference.
+
+The `getBean()` method returns the `Bean` object representing metadata of the given contextual instance.
+
+The `destroy()` method destroys the contextual instance and is a no-op if:
+
+* called multiple times
+* the producing `Instance` does not exist
+* the handle does not hold a contextual reference, i.e. `get()` was never called
+
+The rules for destroying instances are the same as with `Instance#destroy()`.
+
+The `close()` method delegates to the aforementioned `destroy()` method.
+
 [[builtin_instance]]
 
 ==== The built-in `Instance`
 
-The container must provide a built-in bean with:
+The container must provide a built-in bean that:
 
-* `Instance<X>` and `Provider<X>` for every legal bean type `X` in its set of bean types,
-* every qualifier type in its set of qualifier types,
-* scope `@Dependent`,
-* no bean name, and
-* an implementation provided automatically by the container.
-
-
-The built-in implementation must be a passivation capable dependency, as defined in <<passivation_capable_dependency>>.
+* is eligible for injection to any injection point with required type `Instance<X>` or `Provider<X>`, for any legal bean type `X`,
+* has any qualifiers
+* has scope `@Dependent`,
+* has no bean name, and
+* has an implementation provided automatically by the container.
 
 [[annotationliteral_typeliteral]]
 
 ==== Using `AnnotationLiteral` and `TypeLiteral`
 
-`javax.enterprise.util.AnnotationLiteral` makes it easier to specify qualifiers when calling `select()`:
+`jakarta.enterprise.util.AnnotationLiteral` makes it easier to specify qualifiers when calling `select()`:
 
 [source, java]
 ----
@@ -773,7 +776,7 @@ public PaymentProcessor getSynchronousPaymentProcessor(PaymentMethod paymentMeth
 }
 ----
 
-`javax.enterprise.util.TypeLiteral` makes it easier to specify a parameterized type with actual type parameters when calling `select()`:
+`jakarta.enterprise.util.TypeLiteral` makes it easier to specify a parameterized type with actual type parameters when calling `select()`:
 
 [source, java]
 ----
@@ -789,21 +792,20 @@ public PaymentProcessor<Cheque> getChequePaymentProcessor() {
 
 The following built-in annotations define a `Literal` static nested class to support inline instantiation of the specific annotation type:
 
-* `javax.enterprise.inject.Any`
-* `javax.enterprise.inject.Default`
-* `javax.enterprise.inject.New`
-* `javax.enterprise.inject.Specializes`
-* `javax.enterprise.inject.Vetoed`
-* `javax.enterprise.util.Nonbinding`
-* `javax.enterprise.context.Initialized`
-* `javax.enterprise.context.Destroyed`
-* `javax.enterprise.context.RequestScoped`
-* `javax.enterprise.context.SessionScoped`
-* `javax.enterprise.context.ApplicationScoped`
-* `javax.enterprise.context.Dependent`
-* `javax.enterprise.context.ConversationScoped`
-* `javax.enterprise.inject.Alternative`
-* `javax.enterprise.inject.Typed`
+* `jakarta.enterprise.inject.Any`
+* `jakarta.enterprise.inject.Default`
+* `jakarta.enterprise.inject.Specializes`
+* `jakarta.enterprise.inject.Vetoed`
+* `jakarta.enterprise.util.Nonbinding`
+* `jakarta.enterprise.context.Initialized`
+* `jakarta.enterprise.context.Destroyed`
+* `jakarta.enterprise.context.RequestScoped`
+* `jakarta.enterprise.context.SessionScoped`
+* `jakarta.enterprise.context.ApplicationScoped`
+* `jakarta.enterprise.context.Dependent`
+* `jakarta.enterprise.context.ConversationScoped`
+* `jakarta.enterprise.inject.Alternative`
+* `jakarta.enterprise.inject.Typed`
 
 The `Literal` class might be used to instantiate the matching `AnnotationLiteral`:
 
@@ -832,9 +834,9 @@ See also the annotation javadoc for more information about specific `Literal` me
 
 In addition, CDI also provides annotation literals for the following JSR 330 annotations:
 
-* `javax.inject.Inject` with `javax.enterprise.inject.literal.InjectLiteral` class
-* `javax.inject.Named` with `javax.enterprise.inject.literal.NamedLiteral` class
-* `javax.inject.Qualifier` with `javax.enterprise.inject.literal.QualifierLiteral` class
-* `javax.inject.Singleton` with `javax.enterprise.inject.literal.SingletonLiteral` class
+* `jakarta.inject.Inject` with `jakarta.enterprise.inject.literal.InjectLiteral` class
+* `jakarta.inject.Named` with `jakarta.enterprise.inject.literal.NamedLiteral` class
+* `jakarta.inject.Qualifier` with `jakarta.enterprise.inject.literal.QualifierLiteral` class
+* `jakarta.inject.Singleton` with `jakarta.enterprise.inject.literal.SingletonLiteral` class
 
 They can be used like static nested classes described above.

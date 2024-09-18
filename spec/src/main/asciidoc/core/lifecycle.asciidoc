@@ -1,3 +1,12 @@
+////
+Copyright (c) 2015 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
 [[lifecycle]]
 
 == Lifecycle of contextual instances
@@ -27,7 +36,7 @@ In the following example, a producer method returns instances of other beans:
 
 [source, java]
 ----
-@SessionScoped
+@RequestScoped
 public class PaymentStrategyProducer implements Serializable {
    
    private PaymentStrategyType paymentStrategyType;
@@ -56,7 +65,7 @@ But in this example, the returned objects are not contextual instances:
 
 [source, java]
 ----
-@SessionScoped
+@RequestScoped
 public class PaymentStrategyProducer implements Serializable {
    
    private PaymentStrategyType paymentStrategyType;
@@ -77,28 +86,23 @@ public class PaymentStrategyProducer implements Serializable {
 }
 ----
 
-In this case, any object returned by the producer method will not have any dependencies injected by the container, receives no lifecycle callbacks or event notifications and does not have interceptors or decorators.
+In this case, any object returned by the producer method will not have any dependencies injected by the container, receives no lifecycle callbacks or event notifications and does not have interceptors or, in {cdi_full}, decorators.
 
 [[biz_method]]
 
 === Container invocations and interception
 
-When the application invokes:
-
-* a method of a bean via a contextual reference to the bean, as defined in <<contextual_reference>>, or
-* a method of a bean via a non-contextual reference to the bean, if the instance was created by the container (e.g. using  `InjectionTarget.produce()` or `UnmanagedInstance.produce()`),
-
-the invocation is treated as a _business method invocation_.
+When the application invokes a method of a bean via a contextual reference to the bean, as defined in <<contextual_reference>>, the invocation is treated as a _business method invocation_.
 
 When the container invokes a method of a bean, the invocation may or may not be treated as a business method invocation:
 
 * Invocations of initializer methods by the container are not business method invocations.
-* Invocations of producer, disposer and observer methods by the container are business method invocations and are intercepted by method interceptors and decorators.
+* Invocations of producer, disposer and observer methods by the container are business method invocations and are intercepted by method interceptors.
 * Invocation of lifecycle callbacks by the container are not business method invocations, but are intercepted by interceptors for lifecycle callbacks.
-* Invocations of interceptors and decorator methods during method or lifecycle callback interception are not business method invocations, and therefore no recursive interception occurs.
-* Invocations of methods declared by java.lang.Object are not business method invocations.
+* Invocations of interceptor methods during method or lifecycle callback interception are not business method invocations, and therefore no recursive interception occurs.
+* Invocations of methods declared by `java.lang.Object` are not business method invocations.
 
-A method invocation passes through method interceptors and decorators if, and only if, it is a business method invocation.
+A method invocation passes through method interceptors if, and only if, it is a business method invocation.
 
 Otherwise, the invocation is treated as a normal Java method call and is not intercepted by the container.
 
@@ -114,9 +118,9 @@ The actual mechanics of bean creation and destruction varies according to what k
 
 ==== Lifecycle of managed beans
 
-When the `create()` method of the `Bean` object that represents a managed bean is called, the container obtains an instance of the bean, as defined by the Managed Beans specification, calling the bean constructor as defined by <<instantiation>>, and performing dependency injection as defined in <<fields_initializer_methods>>.
+When the `create()` method of the `Bean` object that represents a managed bean is called, the container obtains an instance of the bean, calling the bean constructor as defined by <<instantiation>>, and performing dependency injection as defined in <<fields_initializer_methods>>.
 
-When the `destroy()` method is called, the container destroys the instance, as defined by the Managed Beans specification, and any dependent objects, as defined in <<dependent_objects_destruction>>.
+When the `destroy()` method is called, the container destroys the instance, and any dependent objects, as defined in <<dependent_objects_destruction>>.
 
 
 

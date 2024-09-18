@@ -1,3 +1,12 @@
+////
+Copyright (c) 2015 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
 [[contexts]]
 
 == Scopes and contexts
@@ -16,7 +25,7 @@ The context implementation collaborates with the container via the `Context` and
 
 === The `Contextual` interface
 
-The interface `javax.enterprise.context.spi.Contextual` defines operations to create and destroy contextual instances of a certain type. Any implementation of `Contextual` is called a _contextual type_.
+The interface `jakarta.enterprise.context.spi.Contextual` defines operations to create and destroy contextual instances of a certain type. Any implementation of `Contextual` is called a _contextual type_.
 In particular, the `Bean` interface defined in <<bean>> extends `Contextual`, so all beans are contextual types.
 
 [source, java]
@@ -38,13 +47,13 @@ If an exception occurs while destroying an instance, the exception must be caugh
 
 If the application invokes a contextual instance after it has been destroyed, the behavior is undefined.
 
-The container and portable extensions may define implementations of the `Contextual` interface that do not extend `Bean`, but it is not recommended that applications directly implement `Contextual`.
+The container may define implementations of the `Contextual` interface that do not extend `Bean`, but it is not recommended that applications directly implement `Contextual`.
 
 [[creational_context]]
 
 ==== The `CreationalContext` interface
 
-The interface `javax.enterprise.context.spi.CreationalContext` provides operations that are used by the `Contextual` implementation during instance creation and destruction.
+The interface `jakarta.enterprise.context.spi.CreationalContext` provides operations that are used by the `Contextual` implementation during instance creation and destruction.
 
 [source, java]
 ----
@@ -71,11 +80,11 @@ If `Contextual.create()` calls `push()`, it must also return the instance passed
 
 === The `Context` interface
 
-The `javax.enterprise.context.spi.Context` interface provides an operation for obtaining contextual instances with a particular scope of any contextual type. Any instance of `Context` is called a context object.
+The `jakarta.enterprise.context.spi.Context` interface provides an operation for obtaining contextual instances with a particular scope of any contextual type. Any instance of `Context` is called a context object.
 
 The context object is responsible for creating and destroying contextual instances by calling operations of the `Contextual` interface.
 
-The `Context` interface is called by the container and may be called by portable extensions.
+The `Context` interface is called by the container.
 It should not be called directly by the application.
 
 [source, java]
@@ -97,8 +106,6 @@ public interface AlterableContext extends Context {
 
 The method `getScope()` returns the scope type of the context object.
 
-A context object may be defined for any of the built-in scopes and registered with the container using the `AfterBeanDiscovery` event as described in <<after_bean_discovery>>.
-
 At a particular point in the execution of the program a context object may be _active_ with respect to the current thread.
 When a context object is active the `isActive()` method returns `true`. Otherwise, we say that the context object is _inactive_ and the `isActive()` method returns `false`.
 
@@ -119,8 +126,6 @@ The `AlterableContext` interface was introduced in CDI 1.1 to allow bean instanc
 Extensions providing context implementations for normal scopes should implement `AlterableContext` instead of `Context`.
 
 If the context object is inactive, the `get()` and `destroy()` methods must throw a `ContextNotActiveException`.
-
-When the container calls `get()` or `destroy()` for a context that is associated with a passivating scope it must ensure that the given instance of `Contextual`  and the instance of `CreationalContext`, if given, are serializable.
 
 The context object is responsible for destroying any contextual instance it creates by passing the instance to the `destroy()` method of the `Contextual` object representing the contextual type. A destroyed instance must not subsequently be returned by the `get()` method.
 
@@ -187,7 +192,7 @@ The `@Dependent` scope is always active.
 
 Many instances of beans with scope `@Dependent` belong to some other bean and are called _dependent objects_.
 
-* Instances of decorators and interceptors are dependent objects of the bean instance they decorate.
+* Instances of interceptors are dependent objects of the bean instance they intercept.
 * An instance of a bean with scope `@Dependent` injected into a field, bean constructor or initializer method is a dependent object of the bean into which it was injected.
 * An instance of a bean with scope `@Dependent` injected into a producer method is a dependent object of the producer method bean instance that is being produced.
 * An instance of a bean with scope `@Dependent` obtained by direct invocation of an `Instance` is a dependent object of the instance of `Instance`.
@@ -228,6 +233,39 @@ From time to time, the container must obtain an _active context object_ for a ce
 
 If there is exactly one active instance of `Context` associated with the scope type, we say that the scope is _active_.
 
+[[activating_builtin_contexts]]
+
+==== Activating Built In Contexts
+
+Certain built in contexts support the ability to be activated and deactivated.  This allows developers to control built-in contexts in ways that they could also manage custom built contexts.
+
+When activating and deactivating built in contexts, it is important to realize that they can only be activated if not already active within a given thread.
+
+[[activating_request_context]]
+
+===== Activating a Request Context
+
+Request contexts can be managed either programmatically or via interceptor.
+
+To programmatically manage request contexts, the container provides a built in bean that is `@Dependent` scoped and of type `RequestContextController` that allows you to activate and deactivate a request context on the current thread.  The object should be considered stateful, invoking the same instance on different threads may not work properly, non-portable behavior may occur.
+
+[source, java]
+----
+public interface RequestContextController {
+   boolean activate();
+   void deactivate() throws ContextNotActiveException;
+}
+----
+
+When the `activate()` method is called, if the request context is not already active on the current thread then it will be activated and the method returns `true`.  Otherwise, the method returns `false`.
+
+When the `deactivate()` method is called, if this controller started the request context then the request context is stopped.  The method does nothing if this controller did not activate the context and the context is active.  This method throws a `ContextNotActiveException` if there is no request context active.
+
+If within the same thread the `activate()` and `deactivate()` methods are invoked repeatedly, the instances between the activations are not the same instances, each request context should be assumed to be new.
+
+To automatically start a request context via interceptor binding, the container provides an interceptor `@ActivateRequestContext` which will activate a request context if not already active prior to the method's invocation, and deactivate it upon method completion, with the same rules as in `RequestContextController`.  The interceptor is automatically registered with a priority of `PLATFORM_BEFORE + 100`.
+
+
 [[contextual_instance]]
 
 ==== Contextual instance of a bean
@@ -249,8 +287,6 @@ If the scope is not active, or if `Context.get()` returns a null value, there is
 
 A contextual instance of any of the built-in kinds of bean defined in <<implementation>> is considered an internal container construct, and it is therefore not strictly required that a contextual instance of a built-in kind of bean directly implement the bean types of the bean.
 However, in this case, the container is required to transform its internal representation to an object that does implement the bean types expected by the application before injecting or returning a contextual instance to the application.
-
-For a custom implementation of the `Bean` interface defined in <<bean>>, the container calls `getScope()` to determine the bean scope.
 
 [[contextual_reference]]
 
@@ -283,6 +319,7 @@ The validity of a contextual reference for a bean depends upon whether the scope
 
 * Any reference to a bean with a normal scope is valid as long as the application maintains a hard reference to it.
 However, it may only be invoked when the context associated with the normal scope is active. If it is invoked when the context is inactive, a `ContextNotActiveException` is thrown by the container.
+* Any reference to a bean with a normal scope is invalid after CDI container shutdown. Maintaining such reference and attempting to use it after container shutdown results in an `IllegalStateException`.
 * Any reference to a bean with a pseudo-scope (such as `@Dependent`) is valid until the bean instance to which it refers is destroyed.
 It may be invoked even if the context associated with the pseudo-scope is not active. If the application invokes a method of a reference to an instance that has already been destroyed, the behavior is undefined.
 
@@ -319,112 +356,6 @@ Injectable references to a bean must respect the rules of contextual reference v
 
 The application should not invoke a method of an invalid injected reference. If the application invokes a method of an invalid injected reference, the behavior is undefined.
 
-[[passivating_scope]]
-
-=== Passivation and passivating scopes
-
-The temporary transfer of the state of an idle object held in memory to some form of secondary storage is called _passivation_.
-The transfer of the passivated state back into memory is called _activation_.
-
-[[passivation_capable]]
-
-==== Passivation capable beans
-
-A bean is called _passivation capable_ if the container is able to temporarily transfer the state of any idle instance to secondary storage.
-
-* A managed bean is passivation capable if and only if the bean class is serializable and all interceptors and decorators of the bean are passivation capable.
-* A producer method is passivation capable if and only if it never returns a value which is not passivation capable at runtime.
-* A producer field is passivation capable if and only if it never refers to a value which is not passivation capable at runtime.
-
-
-A custom implementation of `Bean` is passivation capable if it implements the interface `PassivationCapable`. An implementation of `Contextual` that is not a bean is passivation capable if it implements both `PassivationCapable` and `Serializable`.
-
-[source, java]
-----
-public interface PassivationCapable {
-    public String getId();
-}
-----
-
-The `getId()` method must return a value that uniquely identifies the instance of `Bean` or `Contextual`. It is recommended that the string contain the package name of the class that implements `Bean` or `Contextual`.
-
-[[passivation_capable_injection_points]]
-
-==== Passivation capable injection points
-
-We call an injection point of a bean _passivation capable_ if the injection point is:
-
-* a transient field, or
-* a non-transient field which resolves to a bean that is a passivation capable dependency, or
-* a bean constructor parameter which is annotated with `@TransientReference`, or
-* a bean constructor parameter which resolves to a bean that is a passivation capable dependency, or
-* a method parameter which is annotated with `@TransientReference`, or
-* a method parameter which resolves to a bean that is a passivation capable dependency.
-
-[[passivation_capable_dependency]]
-
-==== Passivation capable dependencies
-
-A bean is called a _passivation capable dependency_ if any contextual reference for that bean is preserved when the object holding the reference is passivated and then activated.
-
-The container must guarantee that:
-
-* all beans with normal scope are passivation capable dependencies,
-* all passivation capable beans with scope `@Dependent` are passivation capable dependencies,
-* the built-in beans of type `Instance`, `Event`, `InjectionPoint` and `BeanManager` are passivation capable dependencies.
-
-
-A custom implementation of `Bean` is a passivation capable dependency if it implements `PassivationCapable`.
-
-[[passivating_scopes]]
-
-==== Passivating scopes
-
-A _passivating scope_ requires that:
-
-* beans with the scope are passivation capable, and
-* implementations of `Contextual` passed to any context object for the scope are passivation capable.
-
-
-Passivating scopes must be explicitly declared `@NormalScope(passivating=true)`.
-
-For example, the built-in session and conversation scopes defined in <<builtin_contexts>> are passivating scopes.
-No other built-in scopes are passivating scopes.
-
-[[passivation_validation]]
-
-==== Validation of passivation capable beans and dependencies
-
-For every bean which declares a passivating scope, the container must validate that the bean truly is passivation capable and that, in addition, its dependencies are passivation capable.
-
-If a managed bean which declares a passivating scope, or a built-in bean:
-
-* is not passivation capable,
-* has an injection point that is not passivation capable,
-* has an interceptor or decorator that is not passivation capable
-* has an interceptor or decorator with an injection point that is not passivation capable
-
-then the container automatically detects the problem and treats it as a deployment problem.
-
-If a producer method declares a passivating scope and:
-
-* has a return type that is declared final and does not implement or extend `Serializable`, or,
-* has an injection point that is not passivation capable
-
-then the container automatically detects the problem and treats it as a deployment problem.
-
-If a producer method declares a passivating scope and doesn't only return `Serializable` types at runtime, then the container must throw an `IllegalProductException`.
-
-If a producer field declares a passivating scope and has a type that is declared final and does not implement or extend `Serializable` then the container automatically detects the problem and treats it as a deployment problem.
-
-If a producer field declares a passivating scope and doesn't only contain `Serializable` values at runtime then the container must throw an `IllegalProductException`.
-
-If a producer method or field of scope `@Dependent` returns an unserializable object for injection into an injection point that requires a passivation capable dependency, the container must throw an `IllegalProductException`
-
-For a custom implementation of `Bean`, the container calls `getInjectionPoints()` to determine the injection points, and `InjectionPoint.isTransient()` to determine whether the injection point is a transient field.
-
-If a managed bean which declares a passivating scope type, has a decorator or interceptor which is not a passivation capable dependency, the container automatically detects the problem and treats it as a deployment problem.
-
 [[builtin_contexts]]
 
 === Context management for built-in scopes
@@ -432,14 +363,8 @@ If a managed bean which declares a passivating scope type, has a decorator or in
 The container must provide an implementation of the `Context` interface for each of the built-in scopes defined in <<builtin_scopes>>.
 These implementations depend on the platform the container is running.
 
-A portable extension may define a custom context object for any or all of the built-in scopes.
-For example, a remoting framework might provide a request context object for the built-in request scope.
-
 The context associated with a built-in normal scope propagates across local, synchronous Java method calls.
 The context does not propagate across remote method invocations or to asynchronous processes.
-
-Portable extensions are encouraged to synchronously fire an event with qualifier `@Initialized(X.class)` when a custom context is initialized, and an event with qualifier `@Destroyed(X.class)` when a custom context is destroyed, where X is the scope type associated with the context.
-A suitable event payload should be chosen.
 
 [[request_context]]
 
@@ -447,14 +372,19 @@ A suitable event payload should be chosen.
 
 The _request context_ is provided by a built-in context object for the built-in scope type `@RequestScoped`.
 
-An event with qualifier @Initialized(RequestScoped.class) is synchronously fired when the request context is initialized and an event with qualifier @Destroyed(RequestScoped.class) when the request context is destroyed.
+An event with qualifier `@Initialized(RequestScoped.class)` is synchronously fired when the request context is initialized.
+An event with qualifier `@BeforeDestroyed(RequestScoped.class)` is synchronously fired when the request context is about to be destroyed, i.e. before the actual destruction.
+An event with qualifier `@Destroyed(RequestScoped.class)` is synchronously fired when the request context is destroyed, i.e. after the actual destruction.
 
+The request context is active:
 
-[[session_context]]
+* during notification of an asynchronous observer method, and
+* during `@PostConstruct` callback of any bean.
 
-==== Session context lifecycle
+The request context is destroyed:
 
-The _session context_ is provided by a built-in context object for the built-in passivating scope type `@SessionScoped`.
+* after the invocation of an asynchronous observer method completes, and
+* after the `@PostConstruct` callback completes, if it did not already exist when the `@PostConstruct` callback occurred.
 
 [[application_context]]
 
@@ -462,47 +392,22 @@ The _session context_ is provided by a built-in context object for the built-in 
 
 The _application context_ is provided by a built-in context object for the built-in scope type `@ApplicationScoped`.
 
-An event with qualifier @Initialized(ApplicationScoped.class) is synchronously fired when the application context is initialized and an event with qualifier @Destroyed(ApplicationScoped.class) is synchronously fired when the application is destroyed.
+An event with qualifier `@Initialized(ApplicationScoped.class)` is synchronously fired when the application context is initialized.
+An event with qualifier `@BeforeDestroyed(ApplicationScoped.class)` is synchronously fired when the application context is about to be destroyed, i.e. before the actual destruction.
+An event with qualifier `@Destroyed(ApplicationScoped.class)` is synchronously fired when the application context is destroyed, i.e. after the actual destruction.
 
+[[custom_contexts]]
 
-[[conversation_context]]
+=== Context management for custom scopes
 
-==== Conversation context lifecycle
+Custom context implementations are encouraged to synchronously fire:
 
-The _conversation context_ is provided by a built-in context object for the built-in passivating scope type `@ConversationScoped`.
+* an event with qualifier `@Initialized(X.class)` when a custom context is initialized, i.e. ready for use,
+* an event with qualifier `@BeforeDestroyed(X.class)` when a custom context is about to be destroyed, i.e. before the actual destruction,
+* an event with qualifier `@Destroyed(X.class)` when a custom context is destroyed, i.e. after the actual destruction,
 
-[[conversation]]
+where `X` is the scope type associated with the context.
 
-==== The `Conversation` interface
+A suitable event payload should be chosen.
 
-The container provides a built-in bean with bean type `Conversation`, scope `@RequestScoped`, and qualifier `@Default`, named `javax.enterprise.context.conversation`.
-
-[source, java]
-----
-public interface Conversation {
-   public void begin();
-   public void begin(String id);
-   public void end();
-   public String getId();
-   public long getTimeout();
-   public void setTimeout(long milliseconds);
-   public boolean isTransient();
-}
-----
-
-* `begin()` marks the current transient conversation long-running. A conversation identifier may, optionally, be specified.
-If no conversation identifier is specified, an identifier is generated by the container.
-* `end()` marks the current long-running conversation transient.
-* `getId()` returns the identifier of the current long-running conversation, or a null value if the current conversation is transient.
-* `getTimeout()` returns the timeout, in milliseconds, of the current conversation.
-* `setTimeout()` sets the timeout of the current conversation.
-* `isTransient()` returns `true` if the conversation is marked transient, or `false` if it is marked long-running.
-
-
-If any method of `Conversation` is called when the conversation scope is not active, a `ContextNotActiveException` is thrown.
-
-If `end()` is called, and the current conversation is marked transient, an `IllegalStateException` is thrown.
-
-If `begin()` is called, and the current conversation is already marked long-running, an `IllegalStateException` is thrown.
-
-If `begin()` is called with an explicit conversation identifier, and a long-running conversation with that identifier already exists, an `IllegalArgumentException` is thrown.
+Build compatible extensions may define custom context classes for custom scopes, but they may not define custom context classes for built-in scopes.

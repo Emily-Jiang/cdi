@@ -1,34 +1,41 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<!--
+	Copyright (c) 2014 Red Hat, Inc. and others
+	
+	This program and the accompanying materials are made available under the
+	Apache Software License 2.0 which is available at:
+	https://www.apache.org/licenses/LICENSE-2.0.
+	
+	SPDX-License-Identifier: Apache-2.0
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>javax.enterprise</groupId>
-		<artifactId>cdi-spec</artifactId>
-		<version>2.0-SNAPSHOT</version>
+		<groupId>jakarta.enterprise</groupId>
+		<artifactId>jakarta.enterprise.cdi-parent</artifactId>
+		<version>5.0.0.Alpha1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>cdi-spec-doc</artifactId>
+	<artifactId>jakarta.enterprise.cdi-spec-doc</artifactId>
 	<packaging>pom</packaging>
 
 
 	<description>CDI Specification documentation</description>
 
 	<properties>
-		<asciidoctor-maven.version>1.5.3</asciidoctor-maven.version>
-		<asciidoctorj-pdf.version>1.5.0-alpha.10.1</asciidoctorj-pdf.version>
-		<license>asl2</license>
+		<asciidoctor-maven.version>3.0.0</asciidoctor-maven.version>
+		<asciidoctorj.version>2.5.11</asciidoctorj.version>
+		<asciidoctorj-pdf.version>2.3.14</asciidoctorj-pdf.version>
+		<!-- asl2 for non-final releases, or final for EFSL -->
+		<license-file>asl2</license-file>
+		<!-- Draft for non-final releases, or Final for spec release -->
+		<revremark>Draft(M1)</revremark>
+		<revnumber>5.0</revnumber> <!-- major.minor only -->
 		<maven.build.timestamp.format>MMMM dd, yyyy</maven.build.timestamp.format>
 		<revisiondate>${maven.build.timestamp}</revisiondate>
 	</properties>
 
 	<profiles>
-		<profile>
-			<id>jcp</id>
-			<properties>
-				<license>jcp</license>
-			</properties>
-		</profile>
 		<profile>
 			<id>jboss-public-repository</id>
 			<activation>
@@ -41,7 +48,7 @@
 				<repository>
 					<id>jboss-public-repository-group</id>
 					<name>JBoss Public Maven Repository Group</name>
-					<url>http://repository.jboss.org/nexus/content/groups/public</url>
+					<url>https://repository.jboss.org/nexus/content/groups/public</url>
 					<releases>
 						<enabled>true</enabled>
 						<updatePolicy>never</updatePolicy>
@@ -56,7 +63,7 @@
 				<pluginRepository>
 					<id>jboss-public-repository-group</id>
 					<name>JBoss Public Maven Repository Group</name>
-					<url>http://repository.jboss.org/nexus/content/groups/public</url>
+					<url>https://repository.jboss.org/nexus/content/groups/public</url>
 					<releases>
 						<enabled>true</enabled>
 						<updatePolicy>never</updatePolicy>
@@ -68,6 +75,89 @@
 				</pluginRepository>
 			</pluginRepositories>
 		</profile>
+
+		<profile>
+			<!-- TODO post M1 as this fails to build with updated TCK source -->
+			<id>tck</id>
+			<properties>
+				<path.to.cdi.spec>${project.build.directory}/generated-docs/cdi-spec.html</path.to.cdi.spec>
+				<tck.version>4.0.12</tck.version>
+				<tck.audit.url>https://repo1.maven.org/maven2/jakarta/enterprise/cdi-tck-core-impl/${tck.version}/cdi-tck-core-impl-${tck.version}-audit-cdi.xml</tck.audit.url>
+				<tck.coverage.url>https://repo1.maven.org/maven2/jakarta/enterprise/cdi-tck-core-impl/${tck.version}/cdi-tck-impl-${tck.version}-coverage-cdi.html
+				</tck.coverage.url>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.jboss</groupId>
+					<artifactId>tck-spec-mapper</artifactId>
+					<version>1.0.0.Alpha2</version>
+					<type>jar</type>
+				</dependency>
+			</dependencies>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>3.3.1</version>
+						<executions>
+							<execution>
+								<id>copy-resources</id>
+								<phase>package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>target/generated-docs/images</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/main/resources/images/</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>java</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<mainClass>org.jboss.tck.spec.mapper.Mapper</mainClass>
+							<systemProperties>
+								<property>
+									<key>spec.html.path</key>
+									<value>${path.to.cdi.spec}</value>
+								</property>
+								<property>
+									<key>tck.audit.url</key>
+									<value>${tck.audit.url}</value>
+								</property>
+								<property>
+									<key>tck.coverage.url</key>
+									<value>${tck.coverage.url}</value>
+								</property>
+								<property>
+									<key>tck.version</key>
+									<value>${tck.version}</value>
+								</property>
+								<property>
+									<key>new.spec.filename</key>
+									<value>${project.build.directory}/generated-docs/cdi-spec-with-assertions.html</value>
+								</property>
+							</systemProperties>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 
 	<build>
@@ -78,6 +168,11 @@
 				<artifactId>asciidoctor-maven-plugin</artifactId>
 				<version>${asciidoctor-maven.version}</version>
 				<dependencies>
+					<dependency>
+						<groupId>org.asciidoctor</groupId>
+						<artifactId>asciidoctorj</artifactId>
+						<version>${asciidoctorj.version}</version>
+					</dependency>
 					<dependency>
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctorj-pdf</artifactId>
@@ -103,14 +198,23 @@
 						</goals>
 						<configuration>
 							<backend>html5</backend>
+							<doctype>book</doctype>
+							<attributes>
+								<docinfo>shared</docinfo>
+							</attributes>
 						</configuration>
 					</execution>
 				</executions>
 				<configuration>
+					<sourceDirectory>src/main/asciidoc</sourceDirectory>
 					<sourceDocumentName>cdi-spec.asciidoc</sourceDocumentName>
-					<sourceHighlighter>coderay</sourceHighlighter>
 					<attributes>
-						<license>${license}</license>
+						<license>${license-file}</license>
+						<revnumber>${revnumber}</revnumber>
+						<revremark>${revremark}</revremark>
+						<revdate>${revisiondate}</revdate>
+						<imagesdir>images</imagesdir>
+						<source-highlighter>coderay</source-highlighter>
 					</attributes>
 				</configuration>
 			</plugin>

@@ -1,0 +1,23 @@
+---
+# Copyright (c) 2021 Red Hat, Inc. and others
+#
+# This program and the accompanying materials are made available under the
+# Apache Software License 2.0 which is available at:
+# https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+layout: default
+---
+<h1>{{ page.name }}</h1>
+<h2>{{ page.position }}</h2>
+
+{{ content }}
+
+<h2>Posts</h2>
+<ul>
+  {% assign filtered_posts = site.posts | where: 'author', page.short_name %}
+  {% for post in filtered_posts %}
+  <li><a href="{{ site.baseurl }}/{{ post.url }}">{{ post.title }}</a></li>
+  {% endfor %}
+</ul>

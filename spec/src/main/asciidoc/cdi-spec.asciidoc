@@ -1,30 +1,51 @@
-= JSR 365: Contexts and Dependency Injection for Java 2.0
-:author: JSR 365 EG lead by Antoine Sabot-Durand
-:email: cdi-dev@lists.jboss.org
-:revnumber: 2.0 EDR2
-:revdate: August 5, 2016
-:revremark: Early Draft
+////
+Copyright (c) 2015 Red Hat, Inc. and others
+
+This program and the accompanying materials are made available under the
+Apache Software License 2.0 which is available at:
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+////
+= Jakarta Contexts and Dependency Injection
+:author: Jakarta Contexts and Dependency Injection Specification Project
+:email: cdi-dev@eclipse.org
+:revnumber: {revnumber}
+:revdate: {revdate}
+:revremark: {revremark}
 :version-label!:
 :sectanchors:
 :doctype: book
 :license: asl2
 :source-highlighter: coderay
 :toc: left
-:toclevels: 4
+:toclevels: 3
 :sectnumlevels: 4
+:title-logo-image: image:jakarta_ee_logo_schooner_color_stacked_default.png[pdfwidth=4.25in,align=right]
 ifdef::backend-pdf[]
 :pagenums:
 endif::[]
+:cdi_lite: CDI Lite
+:cdi_full: CDI Full
 
 
 
 [preface]
 include::preface.asciidoc[]
 
+[[introduction]]
+
+= Introduction
+
 include::architecture.asciidoc[]
 
 [[part_1]]
 = Part I - Core CDI
+
+include::core/core_structure.adoc[]
+
+[[part_1a]]
+= Part I.A - {cdi_lite}
 
 include::core/definition.asciidoc[]
 
@@ -38,23 +59,46 @@ include::core/scopescontexts.asciidoc[]
 
 include::core/lifecycle.asciidoc[]
 
-include::core/decorators.asciidoc[]
-
 include::core/interceptors.asciidoc[]
 
 include::core/events.asciidoc[]
 
-include::core/spi.asciidoc[]
+include::core/invokers.asciidoc[]
+
+include::core/beanmanager_lite.asciidoc[]
+
+include::core/spi_lite.asciidoc[]
 
 include::core/packagingdeployment.asciidoc[]
 
+[[part_1b]]
+= Part I.B - {cdi_full}
+
+include::core/definition_full.asciidoc[]
+
+include::core/inheritance_full.asciidoc[]
+
+include::core/injectionandresolution_full.asciidoc[]
+
+include::core/scopescontexts_full.asciidoc[]
+
+include::core/lifecycle_full.asciidoc[]
+
+include::core/interceptors_full.asciidoc[]
+
+include::core/decorators.asciidoc[]
+
+include::core/events_full.asciidoc[]
+
+include::core/invokers_full.asciidoc[]
+
+include::core/spi_full.asciidoc[]
+
+include::core/packagingdeployment_full.asciidoc[]
 
 [[part_2]]
 = Part II - CDI in Java SE
 
 include::javase/javase.asciidoc[]
 
-[[part_3]]
-= Part III - CDI in Java EE
 
-include::javaee/javaeeintegration.asciidoc[]
